@@ -3,6 +3,7 @@ mod message;
 #[path = "./domain/messages/messages.rs"]
 mod messages;
 
+use axum::http::StatusCode;
 use axum::{extract, routing::get, Json, Router};
 use messages::{add_message, get_messages};
 use serde::Deserialize;
@@ -33,6 +34,12 @@ async fn get_messages_handler() -> Json<Vec<message::Message>> {
     return Json(get_messages(0, 10).await);
 }
 
-async fn add_message_handler(extract::Json(payload): extract::Json<AddMessage>) {
+async fn add_message_handler(
+    extract::Json(payload): extract::Json<AddMessage>,
+) -> Result<(), StatusCode> {
+    if payload.message.is_empty() {
+        Err(StatusCode::BAD_REQUEST)?;
+    }
     add_message(payload.message).await;
+    Ok(())
 }
