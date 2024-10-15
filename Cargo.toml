@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 axum = "0.6.20"
+axum-macros = "0.4.2"
 hyper = { version = "0.14.27", features = ["full"] }
 tokio = { version = "1.32.0", features = ["full"] }
 tower = "0.4.13"

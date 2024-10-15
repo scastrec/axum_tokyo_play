@@ -1,14 +1,19 @@
 #[path = "./model/message.rs"]
 mod message;
-#[path = "./domain/messages/messages.rs"]
+#[path = "./domain/messages/mod.rs"]
 mod messages;
 
-use axum::http::StatusCode;
-use axum::{extract, routing::get, Json, Router};
-use messages::{add_message, get_messages};
+#[path = "./infra/messages_repository.rs"]
+mod messages_repository;
+
+use axum::extract::Json;
+use axum::response::IntoResponse;
+use axum::{routing::get, Router};
+use axum_macros::debug_handler;
+use messages::messages::{add_message, get_messages};
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct AddMessage {
     message: String,
 }
@@ -29,17 +34,19 @@ async fn main() {
         .unwrap();
 }
 
-async fn get_messages_handler() -> Json<Vec<message::Message>> {
+#[debug_handler]
+async fn get_messages_handler() -> impl IntoResponse {
     // TODO parse params for start/stop
-    return Json(get_messages(0, 10).await);
+    let message_gateway = messages_repository::MessageRepository::new();
+    let messages = get_messages(Box::new(message_gateway), 0, 10).await;
+    return Json(messages);
 }
 
-async fn add_message_handler(
-    extract::Json(payload): extract::Json<AddMessage>,
-) -> Result<(), StatusCode> {
-    if payload.message.is_empty() {
-        Err(StatusCode::BAD_REQUEST)?;
-    }
-    add_message(payload.message).await;
-    Ok(())
+async fn add_message_handler(Json(payload): Json<AddMessage>) {
+    /*if payload.message.is_empty() {
+        Ok((StatusCode::BAD_REQUEST, Json(ErrorMessage{error: "message"})).into_response())
+    }*/
+    let message_gateway = messages_repository::MessageRepository::new();
+    let _message = add_message(Box::new(message_gateway), payload.message).await;
+    //Ok(Json(message))
 }

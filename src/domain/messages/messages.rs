@@ -1,18 +1,21 @@
 use crate::message::Message;
 use std::time::SystemTime;
 
-// TODO: Use an interface, not the infra implementation
-#[path = "../../infra/redis-store.rs"]
-mod store;
+use super::messages_gateway::MessageGateway;
 
-pub async fn add_message(text: String) {
+pub async fn add_message(message_gateway: Box<dyn MessageGateway>, text: String) -> Message {
     let message = Message {
         message: text,
         timestamp: SystemTime::now(),
     };
-    store::add_message(message).await;
+    message_gateway.add_message(message.clone());
+    return message;
 }
 
-pub async fn get_messages(start: isize, stop: isize) -> Vec<Message> {
-    return store::get_messages(start, stop).await;
+pub async fn get_messages(
+    message_gateway: Box<dyn MessageGateway>,
+    start: isize,
+    stop: isize,
+) -> Vec<Message> {
+    return message_gateway.get_messages(start, stop);
 }
